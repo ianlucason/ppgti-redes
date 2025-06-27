@@ -122,3 +122,71 @@ Esta é a parte central do "Closed Loop".
 * **Controle de Versão:** Use Git desde o início para gerenciar seu código.
 
 Este é um projeto desafiador, mas muito recompensador. Qual parte você gostaria de detalhar mais ou por onde gostaria de começar a discussão? Por exemplo, podemos focar na configuração da topologia no Mininet ou na estratégia para medição de latência com Scapy.
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Fase 1: Verificar a Topologia de Rede (Passo Atual)O objetivo desta fase é garantir, sem qualquer dúvida, que a conectividade e o roteamento na sua rede Mininet estão perfeitos. Execute estes comandos no terminal do Mininet (mininet>).1. Teste de Conectividade com ping:Entre hosts na mesma rede de acesso:h_uRLLC1 ping h_eMBB1 -c 3
+h_uRLLC2 ping h_eMBB2 -c 3
+Através de toda a rede de transporte:h_uRLLC1 ping h_uRLLC2 -c 3
+De todos os hosts para a "Nuvem" (h_cloud):h_uRLLC1 ping h_cloud -c 3
+h_eMBB1 ping h_cloud -c 3
+h_uRLLC2 ping h_cloud -c 3
+h_eMBB2 ping h_cloud -c 3
+Resultado Esperado: Todos os pings devem ter 0% de perda de pacotes. Se algum falhar, há um problema de roteamento que precisa de ser corrigido.2. Verificação do Caminho com traceroute:De um host de acesso para a nuvem:h_uRLLC1 traceroute h_cloud
+Resultado Esperado: A saída deve mostrar o caminho dos pacotes a passar pelos IPs dos roteadores corretos (172.18.1.1 -> 172.19.13.3 -> 172.19.34.4 -> 172.19.40.100).3. Teste de Largura de Banda com iperf:Abra terminais para os hosts:xterm h_cloud h_eMBB1
+No terminal h_cloud, inicie o servidor:iperf -s
+No terminal h_eMBB1, inicie o cliente:iperf -c 172.19.40.100 -t 10
+Resultado Esperado: O teste deve funcionar e reportar uma largura de banda próxima do elo mais lento do caminho (50 Mbps, conforme definido nos link_params_access).Fase 2: Gerar Tráfego e Monitorizar LatênciaAgora vamos criar os scripts para gerar os tráfegos uRLLC e eMBB.1. Gerador/Monitor de Tráfego uRLLC (Scapy):Crie um ficheiro Python chamado gerador_monitor_uRLLC.py. Este script irá enviar pacotes TCP e medir a latência.# gerador_monitor_uRLLC.py
+from scapy.all import IP, TCP, sr1
+import time
+
+ip_destino = "172.19.40.100"  # IP do h_cloud
+porta_destino = 8080
+intervalo_segundos = 1
+
+print(f"Iniciando gerador/monitor uRLLC para {ip_destino}:{porta_destino}")
+try:
+    while True:
+        pacote = IP(dst=ip_destino) / TCP(dport=porta_destino, flags="S")
+        tempo_envio = time.time()
+        resposta = sr1(pacote, timeout=1, verbose=0)
+        if resposta:
+            latencia_ms = (time.time() - tempo_envio) * 1000
+            print(f"Latência uRLLC: {latencia_ms:.2f} ms")
+            if latencia_ms > 5.0:
+                print(f"ALERTA: Latência ({latencia_ms:.2f} ms) excedeu 5ms!")
+        else:
+            print("Timeout no pacote uRLLC.")
+        time.sleep(intervalo_segundos)
+except KeyboardInterrupt:
+    print("\nParando gerador uRLLC.")
+Como executar: No Mininet, abra um terminal para o host de origem (xterm h_uRLLC1) e execute o script com sudo python3 gerador_monitor_uRLLC.py.2. Gerador de Tráfego eMBB (iperf):Este passo é o mesmo do teste de iperf da Fase 1, mas agora o objetivo é executá-lo em simultâneo com o script uRLLC para causar congestionamento.No terminal h_cloud: iperf -sNo terminal h_eMBB1: iperf -c 172.19.40.100 -b 40M -t 120Use -b 40M (40 Megabits/s) para tentar congestionar o link de acesso de 50 Mbps.Use -t 120 para executar por 2 minutos, dando tempo para observar o impacto.Fase 3: Automatizar e Desenvolver o Sistema de Controlo (Closed Loop)Agora, vamos integrar tudo e construir a lógica de controlo.1. Automatizar a Geração de Tráfego:Modifique o seu script principal da topologia Mininet (mininet_topologia_completa_v1.py) para iniciar os geradores de tráfego automaticamente depois de net.start().# No script da topologia, depois de net.start()
+info('*** Iniciando geradores de tráfego...\n')
+
+# Iniciar o servidor iperf no h_cloud em background
+h_cloud.cmd('iperf -s &')
+time.sleep(1) # Dar tempo para o servidor iniciar
+
+# Iniciar o gerador uRLLC no h_uRLLC1
+# Redirecionar a saída para um ficheiro de log é uma boa prática
+h_uRLLC1.cmd('sudo python3 gerador_monitor_uRLLC.py > urllc_log.txt &')
+
+# Pode iniciar o cliente iperf aqui também, ou mais tarde no CLI
+# h_eMBB1.cmd('iperf -c 172.19.40.100 -b 40M -t 120 &')
+2. Implementar a Lógica de Controlo de QoS:Crie um ficheiro controlador_qos.py. Este será o "cérebro" do seu sistema.Este script precisa de uma forma de saber que a latência excedeu 5ms. Inicialmente, pode fazer com que o script gerador_monitor_uRLLC.py escreva num "ficheiro de alerta" quando o limite é ultrapassado, e o controlador_qos.py lê esse ficheiro. (Uma solução mais avançada usaria sockets ou outra forma de IPC).Quando o alerta é recebido, o controlador_qos.py deve aplicar regras de QoS nos roteadores.3. Aplicar Regras de QoS com tc:A ação de controlo será executar comandos tc (traffic control) nos roteadores. As regras devem priorizar o tráfego uRLLC.Exemplo de comandos tc para aplicar num roteador (ex: r_trans1):# 1. Apagar qdisc existente na interface de saída (ex: r_trans1-eth1)
+tc qdisc del dev r_trans1-eth1 root
+
+# 2. Adicionar uma qdisc PRIO, que tem bandas de prioridade
+tc qdisc add dev r_trans1-eth1 root handle 1: prio bands 3
+
+# 3. Criar filtros para direcionar o tráfego para as bandas corretas
+# Tráfego uRLLC (ex: da porta 8080) para a banda 0 (prioridade mais alta)
+tc filter add dev r_trans1-eth1 protocol ip parent 1: prio 1 u32 match ip dport 8080 0xffff flowid 1:1
+
+# Tráfego eMBB (ex: da porta 5001) para a banda 1 (prioridade média)
+tc filter add dev r_trans1-eth1 protocol ip parent 1: prio 2 u32 match ip dport 5001 0xffff flowid 1:2
+
+# Todo o resto do tráfego vai para a banda 2 (prioridade mais baixa) por defeito
+O seu controlador_qos.py precisará de uma forma de executar estes comandos nos nós do Mininet. Se o controlador for um script externo, pode usar ssh. Se estiver integrado com o script principal do Mininet, pode chamar r_trans1.cmd('tc ...').Fase 4: Avaliação e Entrega1. Teste Completo do Sistema:Inicie a topologia com os geradores de tráfego automáticos.Deixe o tráfego uRLLC a correr sozinho por um tempo e verifique a latência no urllc_log.txt.Inicie o cliente iperf para o tráfego eMBB e observe se a latência uRLLC aumenta.Verifique se o seu sistema de controlo deteta a alta latência e aplica as regras tc.Confirme se, após a aplicação das regras, a latência do uRLLC volta a baixar para menos de 5ms, mesmo com o tráfego eMBB a correr.2. Coleta de Dados:Guarde os logs de latência uRLLC e os resultados de largura de banda do iperf.Use estes dados para criar gráficos para o seu relatório que mostrem a latência antes, durante e depois da ativação do controlo.3. Preparar os Entregáveis:Escreva o seu relatório final no formato de artigo científico, explicando a sua metodologia, a arquitetura da solução, os resultados da avaliação e as conclusões.Organize o seu código no repositório GitHub, com um README.md claro que explique como configurar e executar o seu projeto.Comece por completar a Fase 1. Se todos os testes de verificação passarem, avance para a Fase 2. Se encontrar algum problema, diga-me qual é o passo e o erro!
