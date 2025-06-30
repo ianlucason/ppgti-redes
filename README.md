@@ -123,4 +123,43 @@ Esta é a parte central do "Closed Loop".
 
 Este é um projeto desafiador, mas muito recompensador. Qual parte você gostaria de detalhar mais ou por onde gostaria de começar a discussão? Por exemplo, podemos focar na configuração da topologia no Mininet ou na estratégia para medição de latência com Scapy.
 
+---
 
+Olá\! Excelente, a saída que você enviou mostra um progresso muito importante\!
+
+Vamos interpretar o que está a acontecer:
+
+1.  O seu script `mininet_topologia_completa_v1.py` iniciou a rede.
+2.  O `controlador_qos.py` iniciou o seu loop de monitorização em segundo plano.
+3.  O `gerador_monitor_uRLLC.py` também iniciou e começou a enviar pacotes.
+4.  A mensagem `>>> Aplicando regras de QoS para priorizar uRLLC...` apareceu **imediatamente**.
+
+**Isto é uma boa notícia\!** Significa que o seu sistema de controlo em malha fechada (Closed Loop) está a funcionar:
+
+  * O monitor (`gerador_monitor_uRLLC.py`) detetou uma latência superior a 5ms.
+  * Ele criou o ficheiro de alerta `latencia.alerta`.
+  * O controlador (`controlador_qos.py`) detetou o ficheiro de alerta.
+  * O controlador executou com sucesso os comandos `tc` para aplicar as regras de QoS nos roteadores.
+
+**Porque é que as regras foram aplicadas imediatamente?**
+É muito provável que os primeiros pacotes enviados pelo monitor tenham sofrido uma latência alta devido à inicialização da rede. Enquanto as tabelas ARP estavam a ser preenchidas e os switches a aprender os caminhos, o primeiro ou os primeiros pings de latência ultrapassaram os 5ms, o que acionou corretamente o seu sistema de controlo.
+
+**Agora, o teste crucial:**
+
+Precisamos de verificar se o problema de conectividade fundamental (`No route to host`) foi resolvido pela última alteração que fizemos no script (configurando o `fail-mode` dos switches).
+
+Por favor, no prompt do Mininet (`mininet>`), execute os seguintes testes e partilhe a saída:
+
+1.  **Teste de Conectividade Fim a Fim (`ping`):**
+
+    ```bash
+    mininet> h_uRLLC1 ping h_cloud -c 3
+    ```
+
+2.  **Teste de Débito (`iperf`):**
+
+    ```bash
+    mininet> h_eMBB1 iperf -c 172.19.40.100 -t 10
+    ```
+
+Se estes comandos agora funcionarem (o `ping` com 0% de perda e o `iperf` a reportar uma largura de banda), significa que a sua topologia está finalmente estável e funcional. Depois disso, podemos analisar o comportamento do sistema de QoS sob carga.
