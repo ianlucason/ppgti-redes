@@ -24,9 +24,13 @@ class LinuxRouter(Node):
         super(LinuxRouter, self).terminate()
 
 def run_topology():
+    # Defina o diretório do seu projeto aqui. Baseado na sua imagem.
+    project_dir = "/media/sf_redes-ifpb"
+    alert_file_path = os.path.join(project_dir, "latencia.alerta")
+
     # Limpa o ficheiro de alerta de uma execução anterior, se existir
-    if os.path.exists("latencia.alerta"):
-        os.remove("latencia.alerta")
+    if os.path.exists(alert_file_path):
+        os.remove(alert_file_path)
         
     net = Mininet(switch=OVSKernelSwitch, link=TCLink, controller=None)
 
@@ -54,6 +58,7 @@ def run_topology():
     link_params_cloud = {'bw': 200, 'delay': '1ms'}
 
     info('*** Criando Links...\n')
+    # (Código dos links permanece o mesmo)
     net.addLink(h_uRLLC1, s_access1, **link_params_access)
     net.addLink(h_eMBB1, s_access1, **link_params_access)
     net.addLink(h_uRLLC2, s_access2, **link_params_access)
@@ -70,11 +75,10 @@ def run_topology():
 
     info('*** Configurando modo standalone para switches OVS...\n')
     for sw in net.switches:
-        # Este comando diz ao switch para agir como um switch L2 de aprendizado
-        # se ele não conseguir se conectar a um controlador. É crucial para o ARP funcionar.
         sw.cmd('ovs-vsctl set-fail-mode', sw.name, 'standalone')
 
     info('*** Configurando IPs e Rotas nos Roteadores...\n')
+    # (Código de IPs e Rotas permanece o mesmo)
     r_trans1.cmd('ip addr add 172.18.1.1/24 dev r_trans1-eth0'); r_trans1.cmd('ip link set r_trans1-eth0 up')
     r_trans1.cmd('ip addr add 172.19.13.1/24 dev r_trans1-eth1'); r_trans1.cmd('ip link set r_trans1-eth1 up')
     r_trans2.cmd('ip addr add 172.18.2.1/24 dev r_trans2-eth0'); r_trans2.cmd('ip link set r_trans2-eth0 up')
@@ -93,12 +97,16 @@ def run_topology():
     time.sleep(2)
     
     info('*** Iniciando o Controlador de QoS em uma thread separada...\n')
-    controller_thread = Thread(target=controlador_qos.iniciar_loop_controle, args=(roteadores,))
+    # CORREÇÃO: Passar o objeto 'net' como terceiro argumento para o controlador.
+    controller_thread = Thread(target=controlador_qos.iniciar_loop_controle, args=(roteadores, project_dir, net))
     controller_thread.daemon = True
     controller_thread.start()
     
     info('*** Iniciando o Monitor de Latência uRLLC...\n')
-    h_uRLLC1.cmd('sudo python3 gerador_monitor_uRLLC.py > urllc_log.txt &')
+    # Comando de inicialização corrigido e mais robusto
+    monitor_cmd = (f"cd {project_dir} && "
+                   f"sudo python3 -u gerador_monitor_uRLLC.py > urllc_log.txt &")
+    h_uRLLC1.cmd(monitor_cmd)
     
     info('*** Iniciando Servidor iperf para tráfego eMBB...\n')
     h_cloud.cmd('iperf -s &')
@@ -108,8 +116,8 @@ def run_topology():
 
     info('*** Parando a rede...\n')
     net.stop()
-    if os.path.exists("latencia.alerta"):
-        os.remove("latencia.alerta")
+    if os.path.exists(alert_file_path):
+        os.remove(alert_file_path)
 
 if __name__ == '__main__':
     setLogLevel('info')
