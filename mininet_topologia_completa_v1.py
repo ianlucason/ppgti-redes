@@ -53,9 +53,9 @@ def run_topology():
     h_eMBB2 = net.addHost('h_eMBB2', ip='172.18.2.20/24', defaultRoute='via 172.18.2.1')
     h_cloud = net.addHost('h_cloud', ip='172.19.40.100/24', defaultRoute='via 172.19.40.4')
     
-    link_params_access = {'bw': 50, 'delay': '1ms'}
-    link_params_transport = {'bw': 100, 'delay': '1ms'}
-    link_params_cloud = {'bw': 200, 'delay': '1ms'}
+    link_params_access = {'bw': 50}
+    link_params_transport = {'bw': 100}
+    link_params_cloud = {'bw': 200}
 
     info('*** Criando Links...\n')
     # (Código dos links permanece o mesmo)
