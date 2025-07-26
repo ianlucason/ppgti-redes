@@ -1,4 +1,5 @@
 # Simulação de Rede 5G com Mininet para QoS de Tráfego eMBB e uRLLC
+# Autores: Talles Thomas Rodrigues Cavalcante e Ian Lucas Oliveira Nunes
 
 Este repositório contém uma simulação de rede 5G simplificada utilizando Mininet, focada na aplicação de políticas de Qualidade de Serviço (QoS) para diferenciar e priorizar tráfegos Enhanced Mobile Broadband (eMBB) e Ultra-Reliable Low-Latency Communication (uRLLC). A simulação monitora a latência do tráfego uRLLC e dinamicamente aplica regras de QoS (HTB + SFQ) nos roteadores de transporte para garantir os requisitos de baixa latência do uRLLC, enquanto gerencia o tráfego eMBB.
 
