@@ -2,9 +2,9 @@ import time
 import os
 
 # --- Configurações ---
-intervalo_verificacao = 2 # Segundos
-porta_urllc = 8080
-porta_embb = 5001 # Porta padrão do iperf
+intervalo_verificacao = 5 # Segundos
+porta_urllc = 5202
+porta_embb = 5201 # Porta padrão do iperf
 
 # Flag para saber se as regras de QoS já foram aplicadas
 regras_qos_ativas = False
@@ -69,6 +69,7 @@ def aplicar_htb_sfq_em_interface(roteador, nome_iface, direcao_filtro):
         f'tc qdisc add dev {iface.name} parent 1:30 handle 30: sfq perturb 10',
         
         # 5. Adiciona os filtros para direcionar o tráfego para as classes HTB corretas
+        f'tc filter add dev {iface.name} protocol ip parent 1:0 prio 1 u32 match ip protocol 1 0xff flowid 1:10',
         f'tc filter add dev {iface.name} protocol arp parent 1:0 prio 1 flowid 1:10',
         f'tc filter add dev {iface.name} protocol ip parent 1:0 prio 1 u32 match ip {direcao_filtro} {porta_urllc} 0xffff flowid 1:10',
         f'tc filter add dev {iface.name} protocol ip parent 1:0 prio 2 u32 match ip {direcao_filtro} {porta_embb} 0xffff flowid 1:20'
