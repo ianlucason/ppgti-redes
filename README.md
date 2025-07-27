@@ -85,3 +85,85 @@ As configurações de largura de banda para os links são:
     ```
 
 ## Estrutura do Projeto
+
+├── mininet_topologia_completa_v3.py # Script principal da topologia Mininet
+├── controlador_qos.py               # Lógica do controlador de QoS
+├── gerador_monitor_uRLLC.py         # Monitor de latência uRLLC
+├── gerador_trafego_embb.py          # Gerador de tráfego eMBB (iperf3 UDP)
+├── gerador_trafego_urllc.py         # Gerador de tráfego uRLLC (iperf3 UDP)
+├── grafico_monitor_urllc_v3.py      # Script para gerar gráficos e vídeos
+├── latencia.alerta                  # Arquivo de flag para ativação do QoS (criado/removido em tempo real)
+├── logs_embb/                       # Diretório para logs de tráfego eMBB
+│   └── iperf_embb_log.txt
+├── logs_urllc/                      # Diretório para logs de tráfego uRLLC
+│   └── iperf_urllc_h_uRLLC2_to_172.19.40.100.log
+├── urllc_log.txt                    # Log do monitor de latência uRLLC
+├── latencia_e_trafego.png           # Saída do gráfico (imagem)
+├── latencia_e_trafego.gif           # Saída do gráfico (GIF animado)
+└── latencia_e_trafego.mp4           # Saída do gráfico (vídeo)
+
+## Como Executar a Simulação
+
+1.  **Clonar o Repositório:**
+    ```bash
+    git clone <URL_DO_SEU_REPOSITORIO>
+    cd <NOME_DO_SEU_REPOSITORIO>
+    ```
+
+2.  **Configurar o Diretório do Projeto:**
+    O script `mininet_topologia_completa_v3.py` espera que o diretório base do projeto seja `/home/ubuntu/compartilhada`. Se você estiver executando em um local diferente, **você precisará editar a linha `project_dir`** no script `mininet_topologia_completa_v3.py` para apontar para o diretório raiz onde os arquivos do seu repositório estão localizados.
+
+    Abra `mininet_topologia_completa_v3.py` e altere:
+    ```python
+    project_dir = "/home/ubuntu/compartilhada"
+    ```
+    para, por exemplo:
+    ```python
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    ```
+    Isso fará com que o script detecte o diretório atual como o `project_dir`.
+
+3.  **Executar a Topologia Mininet:**
+    Navegue até o diretório do projeto e execute o script principal com privilégios de superusuário:
+    ```bash
+    sudo python3 mininet_topologia_completa_v3.py
+    ```
+
+    O script fará o seguinte:
+    * Construirá a topologia de rede Mininet.
+    * Configurará IPs e rotas nos roteadores.
+    * Iniciará o **Controlador de QoS** em uma thread separada.
+    * Iniciará o **Monitor de Latência uRLLC** em `h_uRLLC1` em segundo plano.
+    * Iniciará os servidores `iperf3` na nuvem (`h_cloud`) para eMBB (porta 5201) e uRLLC (porta 5202).
+    * Iniciará os clientes `iperf3` em `h_eMBB1` (eMBB) e `h_uRLLC2` (uRLLC), gerando tráfego contínuo por 120 segundos.
+    * Iniciará o **Gerador de Gráficos** em segundo plano, que monitorará os logs e atualizará os arquivos de saída (`.png`, `.gif`, `.mp4`).
+    * Após a inicialização do tráfego e dos monitores, a simulação aguardará a duração total do teste (120 segundos + 10 segundos de buffer).
+    * Finalmente, o prompt do Mininet CLI será exibido, permitindo interações manuais (você pode sair digitando `exit`).
+    * Ao sair do CLI ou após o término automático, a rede será derrubada.
+
+## Análise dos Resultados
+
+Após a execução da simulação, os seguintes arquivos serão gerados no diretório do seu projeto:
+
+* **`latencia_e_trafego.png`**: Uma imagem estática do gráfico final de latência uRLLC.
+* **`latencia_e_trafego.gif`**: Um GIF animado mostrando a evolução da latência uRLLC ao longo do tempo.
+* **`latencia_e_trafego.mp4`**: Um vídeo da evolução da latência uRLLC ao longo do tempo (requer ffmpeg).
+* **`urllc_log.txt`**: Contém os logs do monitor de latência uRLLC (saída do `ping`).
+* **`latencia.alerta`**: Este arquivo aparecerá e desaparecerá em tempo real, indicando os períodos em que a latência uRLLC excedeu o limite e o QoS foi ativado.
+* **`logs_embb/iperf_embb_log.txt`**: Logs detalhados do cliente iperf3 para o tráfego eMBB.
+* **`logs_urllc/iperf_urllc_h_uRLLC2_to_172.19.40.100.log`**: Logs detalhados do cliente iperf3 para o tráfego uRLLC.
+
+**Interpretando os Gráficos:**
+Observe os gráficos para identificar:
+* Como a latência uRLLC se comporta.
+* Os momentos em que a linha pontilhada vermelha (limite de 5ms) é cruzada, indicando degradação.
+* As faixas alaranjadas no fundo do gráfico, que indicam os períodos em que as regras de QoS foram ativadas nos roteadores de transporte para tentar controlar a latência.
+* A eficácia do controlador de QoS em trazer a latência de volta para dentro do limite aceitável após a sua ativação.
+
+## Limpeza
+
+Para remover os arquivos de log e os gráficos gerados, você pode usar os seguintes comandos:
+
+```bash
+rm -f latencia.alerta urllc_log.txt latencia_e_trafego.png latencia_e_trafego.gif latencia_e_trafego.mp4
+rm -rf logs_embb logs_urllc
