@@ -32,7 +32,9 @@ As configurações de largura de banda para os links são:
 - Links de Transporte: 100 Mbps
 - Link para a Nuvem: 200 Mbps
 
-![Diagrama da Topologia (Substituir pela imagem real da sua topologia, se houver)](./docs/topology_diagram.png) ## Funcionalidades Implementadas
+(./main/topology.png)
+
+## Funcionalidades Implementadas
 
 1.  **Geração de Tráfego:**
     * **uRLLC:** Tráfego UDP de baixa taxa de bits, mas com requisitos estritos de latência, simulado por `h_uRLLC2` para `h_cloud`.
