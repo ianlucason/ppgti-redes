@@ -93,9 +93,9 @@ As configurações de largura de banda para os links são:
 * grafico_monitor_urllc_v3.py      # Script para gerar gráficos e vídeos
 * latencia.alerta                  # Arquivo de flag para ativação do QoS (criado/removido em tempo real)
 * logs_embb/                       # Diretório para logs de tráfego eMBB
-   * ** iperf_embb_log.txt
+   * iperf_embb_log.txt
 * logs_urllc/                      # Diretório para logs de tráfego uRLLC
-   * ** iperf_urllc_h_uRLLC2_to_172.19.40.100.log
+   * iperf_urllc_h_uRLLC2_to_172.19.40.100.log
 * urllc_log.txt                    # Log do monitor de latência uRLLC
 * latencia_e_trafego.png           # Saída do gráfico (imagem)
 * latencia_e_trafego.gif           # Saída do gráfico (GIF animado)
