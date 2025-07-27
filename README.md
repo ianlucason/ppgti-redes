@@ -16,7 +16,6 @@ Este repositório contém uma simulação de rede 5G simplificada utilizando Min
 - [Como Executar a Simulação](#como-executar-a-simulação)
 - [Análise dos Resultados](#análise-dos-resultados)
 - [Limpeza](#limpeza)
-- [Licença](#licença)
 
 ## Visão Geral da Topologia
 
@@ -86,21 +85,21 @@ As configurações de largura de banda para os links são:
 
 ## Estrutura do Projeto
 
-├── mininet_topologia_completa_v3.py # Script principal da topologia Mininet
-├── controlador_qos.py               # Lógica do controlador de QoS
-├── gerador_monitor_uRLLC.py         # Monitor de latência uRLLC
-├── gerador_trafego_embb.py          # Gerador de tráfego eMBB (iperf3 UDP)
-├── gerador_trafego_urllc.py         # Gerador de tráfego uRLLC (iperf3 UDP)
-├── grafico_monitor_urllc_v3.py      # Script para gerar gráficos e vídeos
-├── latencia.alerta                  # Arquivo de flag para ativação do QoS (criado/removido em tempo real)
-├── logs_embb/                       # Diretório para logs de tráfego eMBB
-│   └── iperf_embb_log.txt
-├── logs_urllc/                      # Diretório para logs de tráfego uRLLC
-│   └── iperf_urllc_h_uRLLC2_to_172.19.40.100.log
-├── urllc_log.txt                    # Log do monitor de latência uRLLC
-├── latencia_e_trafego.png           # Saída do gráfico (imagem)
-├── latencia_e_trafego.gif           # Saída do gráfico (GIF animado)
-└── latencia_e_trafego.mp4           # Saída do gráfico (vídeo)
+- mininet_topologia_completa_v3.py # Script principal da topologia Mininet
+- controlador_qos.py               # Lógica do controlador de QoS
+─ gerador_monitor_uRLLC.py         # Monitor de latência uRLLC
+─ gerador_trafego_embb.py          # Gerador de tráfego eMBB (iperf3 UDP)
+─ gerador_trafego_urllc.py         # Gerador de tráfego uRLLC (iperf3 UDP)
+─ grafico_monitor_urllc_v3.py      # Script para gerar gráficos e vídeos
+─ latencia.alerta                  # Arquivo de flag para ativação do QoS (criado/removido em tempo real)
+─ logs_embb/                       # Diretório para logs de tráfego eMBB
+- ─ iperf_embb_log.txt
+─ logs_urllc/                      # Diretório para logs de tráfego uRLLC
+- ─ iperf_urllc_h_uRLLC2_to_172.19.40.100.log
+─ urllc_log.txt                    # Log do monitor de latência uRLLC
+─ latencia_e_trafego.png           # Saída do gráfico (imagem)
+─ latencia_e_trafego.gif           # Saída do gráfico (GIF animado)
+─ latencia_e_trafego.mp4           # Saída do gráfico (vídeo)
 
 ## Como Executar a Simulação
 
